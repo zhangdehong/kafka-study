@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 
@@ -22,12 +23,13 @@ public class MyConsumer {
         properties = new Properties();
         properties.put("bootstrap.servers", "127.0.0.1:9092");
         properties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        properties.put("value.deserializer", "org.apache.kafka.common.serialization.StringSerializer");
+        properties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        // 指定消费者组
         properties.put("group.id", "kafkaStudy");
     }
 
     /**
-     * 自动提交
+     * 自动提交位移的方式消费数据
      */
     private static void generalConsumeMessageAutoCommit () {
         // 允许自动提交位移
@@ -37,7 +39,8 @@ public class MyConsumer {
         try {
             while (true) {
                 boolean flag = true;
-                ConsumerRecords<String, String> records = consumer.poll(100);
+                // 拉取数据
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, String> record : records) {
                     System.out.printf("topic = %s , partition = %s , key = %s , value = %s%n",
 
@@ -65,12 +68,12 @@ public class MyConsumer {
         consumer.subscribe(Collections.singleton("hong-kafka-study"));
         while (true) {
             boolean flag = true;
-            ConsumerRecords<String, String> records = consumer.poll(100);
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, String> record : records) {
-                System.out.println(String.format("topic = %s , partition = %s , key = %s , value = %s",
+                System.out.printf("topic = %s , partition = %s , key = %s , value = %s%n",
 
                         record.topic(), record.partition(), record.key(), record.value()
-                ));
+                );
                 if (record.value().equals("done")) {
                     flag = false;
                 }
@@ -93,23 +96,24 @@ public class MyConsumer {
      */
     private static void generalConsumeMessageAsyncCommit () {
         properties.put("auto.commit.offset", false);
-        consumer = new KafkaConsumer<String, String>(properties);
+        consumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Collections.singleton("hong-kafka-study"));
         while (true) {
             boolean flag = true;
-            ConsumerRecords<String, String> records = consumer.poll(100);
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, String> record : records) {
-                System.out.println(String.format("topic = %s , partition = %s , key = %s , value = %s",
+                System.out.printf("topic = %s , partition = %s , key = %s , value = %s%n",
 
                         record.topic(), record.partition(), record.key(), record.value()
-                ));
+                );
                 if (record.value().equals("done")) {
                     flag = false;
                 }
             }
             try {
-                // Commit A 2000
-                // Commit B 3000
+                // Commit A offset 2000
+                // Commit B offset 3000  如果提交失败，不会重试
+                // 会有重复消费消息
                 consumer.commitAsync();
             } catch (CommitFailedException e) {
                 System.out.println("commit fail error ：" + e.getMessage());
@@ -122,15 +126,15 @@ public class MyConsumer {
 
     private static void generalConsumeMessageAsyncCommitWithCallback () {
         properties.put("auto.commit.offset", false);
-        consumer = new KafkaConsumer<String, String>(properties);
+        consumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Collections.singleton("hong-kafka-study"));
         while (true) {
             boolean flag = true;
-            ConsumerRecords<String, String> records = consumer.poll(100);
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, String> record : records) {
-                System.out.println(String.format("topic = %s , partition = %s , key = %s , value = %s",
+                System.out.printf("topic = %s , partition = %s , key = %s , value = %s%n",
                         record.topic(), record.partition(), record.key(), record.value()
-                ));
+                );
                 if (record.value().equals("done")) {
                     flag = false;
                 }
@@ -156,15 +160,15 @@ public class MyConsumer {
 
     private static void mixSyncAndAsyncCommit () {
         properties.put("enable.auto.commit", true);
-        consumer = new KafkaConsumer<String, String>(properties);
+        consumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Collections.singleton("hong-kafka-study"));
         try {
             while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(100);
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, String> record : records) {
-                    System.out.println(String.format("topic = %s , partition = %s , key = %s , value = %s",
+                    System.out.printf("topic = %s , partition = %s , key = %s , value = %s%n",
                             record.topic(), record.partition(), record.key(), record.value()
-                    ));
+                    );
                 }
                 consumer.commitAsync();
             }

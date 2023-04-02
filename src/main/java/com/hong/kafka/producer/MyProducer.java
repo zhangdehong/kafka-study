@@ -79,8 +79,8 @@ public class MyProducer {
     }
 
     public static void main (String[] args) throws Exception {
-        // sendMessageForgetResult();
+        sendMessageForgetResult();
         // sendMessageSync();
-        sendMessageCallback();
+        // sendMessageCallback();
     }
 }
